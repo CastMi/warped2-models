@@ -73,14 +73,20 @@ class Wait : public VHDLEvent {
 class SigEvent : public VHDLEvent {
    public:
       SigEvent() = default;
-      SigEvent(const std::string& receiver_name, int signal,
+      SigEvent(const std::string& receiver_name,
+               int value,
+               const std::string& signal_name,
                const unsigned int timestamp)
             : VHDLEvent(receiver_name, timestamp, EVENT_SIGNAL),
-              value_(signal)
+              value_(value), signal_name_(signal_name)
       {}
+
+      const std::string& SignalName() const { return signal_name_; }
+      int Value() const { return value_; }
    
 private:
-      int value_;
+      const int value_;
+      const std::string signal_name_;
 };
 
 #endif

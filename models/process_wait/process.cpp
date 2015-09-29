@@ -32,9 +32,10 @@ std::vector<std::shared_ptr<warped::Event> > Process::initializeLP() {
 }
 
 
-std::vector<std::shared_ptr<warped::Event> > Process::receiveEvent(const warped::Event& event) {
+std::vector<std::shared_ptr<warped::Event> > Process::receiveEvent( const warped::Event& event ) {
    const VHDLEvent my_event = static_cast<const VHDLEvent&>(event);
-   std::cout << name_ << ": received a message from " << event.sender_name_ << " at time " << std::to_string(event.timestamp()) << ". " << std::endl;
+   std::cout << name_ << ": received a message from " << event.sender_name_ <<
+   " at time " << std::to_string(event.timestamp()) << ". " << std::endl;
    std::vector<std::shared_ptr<warped::Event> > events;
    switch(my_event.gettype())
    {
@@ -44,13 +45,23 @@ std::vector<std::shared_ptr<warped::Event> > Process::receiveEvent(const warped:
          events = executeVHDL( event );
          break;
       case EVENT_SIGNAL:
-         /*
-          * Signal changed.
-          * TODO: Check my status
-          */
-         std::cout << name_ << ": a signal is changed. " << std::endl;
-         events = executeVHDL(event);
-         break;
+         {
+            std::cout << name_ << ": it is a signal changed message. " << std::endl;
+            const SigEvent sign_event = static_cast<const SigEvent&>(event);
+            // Is the signal in my sensitivity list?
+            if(sens_list_.find(sign_event.SignalName()) != sens_list_.end())
+            {
+               std::cout << name_ << ": the signal " << sign_event.SignalName() <<
+               " has new the new value of " << std::to_string(sign_event.Value()) <<
+               ". " << std::endl;
+               events = executeVHDL( event );
+            } else {
+               std::cout << name_ << ": the signal " << sign_event.SignalName() <<
+               " is not in my sensitivity list. " << std::endl;
+               assignSignal( sign_event.SignalName(), sign_event.Value(), 0, sign_event.timestamp() );
+            }
+            break;
+         }
       default:
          /* This should not happen */
          assert(false);
@@ -60,17 +71,29 @@ std::vector<std::shared_ptr<warped::Event> > Process::receiveEvent(const warped:
 
 std::vector<std::shared_ptr<warped::Event> > Process::executeVHDL( const warped::Event& event ) {
    std::vector<std::shared_ptr<warped::Event> > events;
+   std::vector<std::shared_ptr<warped::Event> > temp;
    switch(state_.waitLabel)
    {
       case 0: state_.waitLabel++;
               std::cout << name_ << ": executing 10 something wait. " << std::endl;
-              events = executeWait( state_.waitLabel, event.timestamp() + 10 );
+              // try to assign a signal immediately.
+              temp = assignSignal("signame", 1, 0, event.timestamp());
+              events.insert(events.end(), temp.begin(), temp.end());
+              // go to sleep
+              temp = executeWait( state_.waitLabel, event.timestamp() + 10 );
+              events.insert(events.end(), temp.begin(), temp.end());
               break;
       case 1: state_.waitLabel++;
+              // try to assign a signal with a delay of 5.
+              temp = assignSignal("signame", 1, 5, event.timestamp());
+              events.insert(events.end(), temp.begin(), temp.end());
+              // go to sleep
               std::cout << name_ << ": executing 20 something wait. " << std::endl;
-              events = executeWait( state_.waitLabel, event.timestamp() + 20 );
+              temp = executeWait( state_.waitLabel, event.timestamp() + 20 );
+              events.insert(events.end(), temp.begin(), temp.end());
               break;
-      case 2: std::cout << name_ << ": finished computation. Resetting state. " << std::endl;
+      case 2: std::cout << name_ << ": finished computation of the process. Resetting state. "
+      << std::endl;
               state_.resetState();
               break;
       default: /* This should not happen */
@@ -80,9 +103,23 @@ std::vector<std::shared_ptr<warped::Event> > Process::executeVHDL( const warped:
    return events;
 }
 
+std::vector<std::shared_ptr<warped::Event> > Process::assignSignal( const std::string name,
+                                                                    const int value,
+                                                                    const unsigned int delay,
+                                                                    const unsigned int timestamp ) {
+   std::vector<std::shared_ptr<warped::Event> > events;
+   if (delay == 0) {
+      std::cout << name_ << ": assigning the signal without sending a message. " << std::endl;
+   } else {
+      std::cout << name_ << ": sending a message to assign a signal with a delay of " << std::to_string(delay) << ". " << std::endl;
+      events.emplace_back(new SigEvent { name_, value, name, timestamp + delay });
+   }
+   return events;
+}
+
 std::vector<std::shared_ptr<warped::Event> > Process::executeWait( unsigned int waitID, unsigned int howmuch ) {
    std::vector<std::shared_ptr<warped::Event> > events;
-   std::cout << name_ << ": sending event to myself at time " << std::to_string(waitID) << " to resume! " << std::endl;
+   std::cout << name_ << ": sending event to myself at time " << std::to_string(howmuch) << " to resume! " << std::endl;
    events.emplace_back(new Wait { name_, howmuch, waitID });
    return events;
 }

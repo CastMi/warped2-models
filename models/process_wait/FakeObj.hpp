@@ -40,9 +40,12 @@ class FakeObj : public VHDLObj {
       void addObj( std::string name ) { objects_.emplace_back(name); }
       
    protected:
-      std::vector<std::string> objects_;
+      virtual std::vector<std::shared_ptr<warped::Event> > assignSignal( const std::string,
+                                                                         const int,
+                                                                         const unsigned int,
+                                                                         const unsigned int ) override;
 
-   private:
+      std::vector<std::string> objects_;
 };
 
 #endif

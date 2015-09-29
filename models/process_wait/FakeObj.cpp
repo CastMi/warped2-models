@@ -30,13 +30,20 @@ std::vector<std::shared_ptr<warped::Event> > FakeObj::initializeLP() {
    
    BOOST_FOREACH( std::string elem, objects_ ) {
          std::cout << name_ << " sends a message to " << elem << ". It should receive it at time " << std::to_string(i) << ". " << std::endl;
-         response_events.emplace_back(new SigEvent { elem, 1, i++ });
+         response_events.emplace_back(new SigEvent { elem, 1, "clk", i++ });
    }
    return response_events;
 }
 
+std::vector<std::shared_ptr<warped::Event> > FakeObj::assignSignal( const std::string,
+                                                                    const int,
+                                                                    const unsigned int,
+                                                                    const unsigned int ) {
+   std::vector<std::shared_ptr<warped::Event> > response_events;
+   return response_events;
+}
 
-std::vector<std::shared_ptr<warped::Event> > FakeObj::receiveEvent(const warped::Event&) {
+std::vector<std::shared_ptr<warped::Event> > FakeObj::receiveEvent( const warped::Event& ) {
    /* This object should not receive events*/
    assert(false);
    std::vector<std::shared_ptr<warped::Event> > response_events;

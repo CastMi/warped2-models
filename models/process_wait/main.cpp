@@ -25,7 +25,7 @@
 #include "events.hpp"
 #include "tclap/ValueArg.h"
 
-#define NUMPROC 5
+#define NUMPROC 4
 
 int main(int argc, const char** argv) {
    std::vector<TCLAP::Arg*> args;
@@ -37,7 +37,7 @@ int main(int argc, const char** argv) {
    fakeobjs.emplace_back(std::string("FakeObj"));
 
    for (unsigned int i = 0; i < NUMPROC; i++) {
-      processes.emplace_back(std::string("Process_") + std::to_string(i));
+      processes.emplace_back(i);
    }
 
    std::vector<warped::LogicalProcess*> object_pointers;

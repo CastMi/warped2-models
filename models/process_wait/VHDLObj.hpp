@@ -42,16 +42,20 @@ WARPED_DEFINE_LP_STATE_STRUCT(VHDLState) {
 
 class VHDLObj : public warped::LogicalProcess {
    public:
-      VHDLObj (const std::string& name)
+      VHDLObj ( const std::string& name )
          :   LogicalProcess(name),
          state_()
       {}
       virtual ~VHDLObj() {};
 
-      virtual std::vector<std::shared_ptr<warped::Event> > receiveEvent(const warped::Event&) = 0;
+      virtual std::vector<std::shared_ptr<warped::Event> > receiveEvent( const warped::Event& ) = 0;
       warped::LPState& getState() override { return this->state_; }
       
    protected:
+      virtual std::vector<std::shared_ptr<warped::Event> > assignSignal( const std::string name,
+                                                                         const int value,
+                                                                         const unsigned int delay,
+                                                                         const unsigned int timestamp ) = 0;
       VHDLState state_;
 };
 
